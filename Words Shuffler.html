@@ -1,0 +1,216 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Shuffler</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"></link>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        .btn-green {
+            background-color: #10B981;
+            color: white;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-green:hover {
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+        }
+        .btn-green:active {
+            transform: scale(0.95);
+        }
+        .checkbox-green {
+            appearance: none;
+            background-color: #fff;
+            border: 2px solid #10B981;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+            position: relative;
+            cursor: pointer;
+            transition: box-shadow 0.2s;
+        }
+        .checkbox-green:hover {
+            box-shadow: 0 0 5px #10B981;
+        }
+        .checkbox-green:checked {
+            background-color: #10B981;
+            border-color: #10B981;
+        }
+        .checkbox-green:disabled {
+            border-color: rgba(255, 0, 0, 0.4);
+            background-color: rgba(128, 128, 128, 0.2);
+            cursor: not-allowed;
+        }
+        .checkbox-green:disabled:checked {
+            border-color: rgba(16, 185, 129, 0.4);
+            background-color: rgba(16, 185, 129, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-montserrat">
+    <div class="container mx-auto p-4">
+        <h1 class="text-3xl font-bold text-center mb-6">Word Shuffler</h1>
+        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
+            <div class="mb-4 flex items-center">
+                <input type="text" id="wordInput" class="w-full p-2 border border-gray-300 rounded-lg text-center uppercase" placeholder="TYPE YOUR WORD HERE">
+                <button id="pasteBtn" class="btn-green px-4 py-2 rounded-lg ml-2">Paste</button>
+            </div>
+            <div class="mb-4 text-left">
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="useHyphen" class="checkbox-green">
+                    <span class="ml-2 text-gray-700">Use hyphen (-) to separate letters</span>
+                </label>
+                <br>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="ignoreSpace" class="checkbox-green">
+                    <span class="ml-2 text-gray-700">Ignore SPACE</span>
+                </label>
+                <br>
+                <label class="inline-flex items-center">
+                    <input type="checkbox" id="shuffleWithinWord" class="checkbox-green">
+                    <span class="ml-2 text-gray-700">Shuffle within each word</span>
+                </label>
+            </div>
+            <div class="flex justify-center space-x-4 mb-4">
+                <button id="shuffleBtn" class="btn-green px-4 py-2 rounded-lg">Shuffle</button>
+                <button id="shuffleCVBtn" class="btn-green px-4 py-2 rounded-lg">Shuffle C-V/V-C</button>
+                <button id="hangmanBtn" class="btn-green px-4 py-2 rounded-lg">Hangman</button>
+                <button id="removeVowelsBtn" class="btn-green px-4 py-2 rounded-lg">Remove Vowels</button>
+            </div>
+            <div class="mb-4">
+                <label for="resultOutput" class="block text-gray-700 font-bold mb-2">Shuffled result:</label>
+                <input type="text" id="resultOutput" class="w-full p-2 border border-gray-300 rounded-lg text-center uppercase font-bold text-blue-500" readonly>
+            </div>
+            <div class="flex justify-center space-x-4">
+                <button id="copyBtn" class="btn-green px-4 py-2 rounded-lg">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const vowels = 'aeiouAEIOU';
+
+        function shuffleWord(word) {
+            return word.split('').sort(() => Math.random() - 0.5).join('');
+        }
+
+        function shuffleCV(word) {
+            let consonants = [];
+            let vowelsArr = [];
+            for (let char of word) {
+                if (vowels.includes(char)) {
+                    vowelsArr.push(char);
+                } else {
+                    consonants.push(char);
+                }
+            }
+            consonants = consonants.sort(() => Math.random() - 0.5);
+            vowelsArr = vowelsArr.sort(() => Math.random() - 0.5);
+            let result = '';
+            let maxLength = Math.max(consonants.length, vowelsArr.length);
+            let startWithVowel = Math.random() > 0.5;
+            for (let i = 0; i < maxLength; i++) {
+                if (startWithVowel) {
+                    if (vowelsArr[i]) result += vowelsArr[i] + '-';
+                    if (consonants[i]) result += consonants[i] + '-';
+                } else {
+                    if (consonants[i]) result += consonants[i] + '-';
+                    if (vowelsArr[i]) result += vowelsArr[i] + '-';
+                }
+            }
+            return result.slice(0, -1); // Remove the trailing "-"
+        }
+
+        function hangman(word) {
+            return word.split(' ').map(w => {
+                if (w.length <= 2) return w;
+                return w[0] + ' ' + '_ '.repeat(w.length - 2).trim() + ' ' + w[w.length - 1];
+            }).join(' ');
+        }
+
+        function removeVowels(word) {
+            return word.replace(/[aeiouAEIOU]/g, '');
+        }
+
+        function applyCheckboxOptions(result) {
+            if (document.getElementById('useHyphen').checked) {
+                result = result.split('').join('-');
+            }
+            return result;
+        }
+
+        function updateIgnoreSpaceCheckbox() {
+            const ignoreSpaceCheckbox = document.getElementById('ignoreSpace');
+            const useHyphenCheckbox = document.getElementById('useHyphen');
+            const shuffleWithinWordCheckbox = document.getElementById('shuffleWithinWord');
+
+            if (useHyphenCheckbox.checked && shuffleWithinWordCheckbox.checked) {
+                ignoreSpaceCheckbox.checked = true;
+                ignoreSpaceCheckbox.disabled = true;
+            } else if (shuffleWithinWordCheckbox.checked) {
+                ignoreSpaceCheckbox.checked = false;
+                ignoreSpaceCheckbox.disabled = true;
+            } else {
+                ignoreSpaceCheckbox.disabled = false;
+            }
+        }
+
+        document.getElementById('shuffleWithinWord').addEventListener('change', updateIgnoreSpaceCheckbox);
+        document.getElementById('useHyphen').addEventListener('change', updateIgnoreSpaceCheckbox);
+
+        document.getElementById('shuffleBtn').addEventListener('click', () => {
+            let word = document.getElementById('wordInput').value;
+            if (document.getElementById('ignoreSpace').checked) {
+                word = word.replace(/\s+/g, '');
+            }
+            let shuffledWord = shuffleWord(word);
+            if (document.getElementById('shuffleWithinWord').checked) {
+                shuffledWord = word.split(' ').map(w => shuffleWord(w)).join(' ');
+            }
+            shuffledWord = applyCheckboxOptions(shuffledWord);
+            document.getElementById('resultOutput').value = shuffledWord;
+        });
+
+        document.getElementById('shuffleCVBtn').addEventListener('click', () => {
+            let word = document.getElementById('wordInput').value;
+            if (document.getElementById('ignoreSpace').checked) {
+                word = word.replace(/\s+/g, '');
+            }
+            let shuffledWord = shuffleCV(word);
+            if (document.getElementById('shuffleWithinWord').checked) {
+                shuffledWord = word.split(' ').map(w => shuffleCV(w)).join(' ');
+            }
+            shuffledWord = applyCheckboxOptions(shuffledWord);
+            document.getElementById('resultOutput').value = shuffledWord;
+        });
+
+        document.getElementById('hangmanBtn').addEventListener('click', () => {
+            const word = document.getElementById('wordInput').value;
+            const hangmanWord = hangman(word);
+            document.getElementById('resultOutput').value = hangmanWord;
+        });
+
+        document.getElementById('removeVowelsBtn').addEventListener('click', () => {
+            let word = document.getElementById('wordInput').value;
+            if (document.getElementById('ignoreSpace').checked) {
+                word = word.replace(/\s+/g, '');
+            }
+            let result = removeVowels(word);
+            result = applyCheckboxOptions(result);
+            document.getElementById('resultOutput').value = result;
+        });
+
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            const result = document.getElementById('resultOutput');
+            result.select();
+            document.execCommand('copy');
+        });
+
+        document.getElementById('pasteBtn').addEventListener('click', async () => {
+            const text = await navigator.clipboard.readText();
+            document.getElementById('wordInput').value = text;
+        });
+    </script>
+</body>
+</html>
